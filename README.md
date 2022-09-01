@@ -1,1 +1,1 @@
-# terraform-aws-lb
+# terraform-aws-elb
