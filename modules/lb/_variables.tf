@@ -9,3 +9,22 @@
 # customer_owned_ipv4_pool         - (Optional) The ID of the customer owned ipv4 pool to use for this load balancer.
 # ip_address_type                  - (Optional) The type of IP addresses used by the subnets for your load balancer. The possible values are ipv4 and dualstack
 # desync_mitigation_mode           - (Optional) Determines how the load balancer handles requests that might pose a security risk to an application due to HTTP desync. Valid values are monitor, defensive (default), strictest.
+
+
+# internal
+# type
+# security_groups
+# subnet_ids
+# drop_invalid_header_fields
+# preserve_host_header
+# idle_timeout
+# enable_deletion_protection
+# enable_cross_zone_load_balancing
+# enable_http2
+# enable_waf_fail_open
+# customer_owned_ipv4_pool
+# ip_address_type
+# desync_mitigation_mode
+# access_logs_enabled
+# access_logs_bucket_id
+# subnet_mappings

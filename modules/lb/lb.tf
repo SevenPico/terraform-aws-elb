@@ -8,7 +8,7 @@ resource "aws_lb" "this" {
 
   internal                         = var.internal
   load_balancer_type               = var.type
-  security_groups                  = var.security_groups
+  security_groups                  = var.security_group_ids
   subnets                          = var.subnet_ids
   drop_invalid_header_fields       = var.drop_invalid_header_fields
   preserve_host_header             = var.preserve_host_header

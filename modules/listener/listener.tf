@@ -1,111 +1,334 @@
+variable "load_balancer_arn" {
+  type = string
+}
+
+variable "port" {
+  type    = string
+  default = null
+}
+
+variable "protocol" {
+  type    = string
+  default = null
+}
+
+variable "ssl_policy" {
+  type    = string
+  default = "ELBSecurityPolicy-TLS-1-2-Ext-2018-06"
+}
+
+variable "alpn_policy" {
+  type    = string
+  default = "HTTP2Preferred"
+}
+
+variable "certificate_arn" {
+  type    = string
+  default = ""
+}
 
 
-# The following arguments are required:
+resource "aws_lb_listener" "this" {
+  count = module.context.enabled ? 1 : 0
 
-# default_action - (Required) Configuration block for default actions. Detailed below.
-# load_balancer_arn - (Required, Forces New Resource) ARN of the load balancer.
-# The following arguments are optional:
+  load_balancer_arn = var.load_balancer_arn
+  tags              = module.context.tags
 
-# alpn_policy - (Optional) Name of the Application-Layer Protocol Negotiation (ALPN) policy. Can be set if protocol is TLS. Valid values are HTTP1Only, HTTP2Only, HTTP2Optional, HTTP2Preferred, and None.
-# certificate_arn - (Optional) ARN of the default SSL server certificate. Exactly one certificate is required if the protocol is HTTPS. For adding additional SSL certificates, see the aws_lb_listener_certificate resource.
-# port - (Optional) Port on which the load balancer is listening. Not valid for Gateway Load Balancers.
-# protocol - (Optional) Protocol for connections from clients to the load balancer. For Application Load Balancers, valid values are HTTP and HTTPS, with a default of HTTP. For Network Load Balancers, valid values are TCP, TLS, UDP, and TCP_UDP. Not valid to use UDP or TCP_UDP if dual-stack mode is enabled. Not valid for Gateway Load Balancers.
-# ssl_policy - (Optional) Name of the SSL Policy for the listener. Required if protocol is HTTPS or TLS.
-# tags - (Optional) A map of tags to assign to the resource. If configured with a provider default_tags configuration block present, tags with matching keys will overwrite those defined at the provider-level.
-# NOTE::
-# Please note that listeners that are attached to Application Load Balancers must use either HTTP or HTTPS protocols while listeners that are attached to Network Load Balancers must use the TCP protocol.
+  port            = var.port
+  protocol        = var.protocol
+  ssl_policy      = var.ssl_policy
+  alpn_policy     = var.alpn_policy
+  certificate_arn = var.certificate_arn
 
-# default_action
-# The following arguments are required:
+  default_action {
+    type = "fixed-response"
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "Unimplemented"
+      status_code  = 200
+    }
+  }
+}
 
-# type - (Required) Type of routing action. Valid values are forward, redirect, fixed-response, authenticate-cognito and authenticate-oidc.
-# The following arguments are optional:
 
-# authenticate_cognito - (Optional) Configuration block for using Amazon Cognito to authenticate users. Specify only when type is authenticate-cognito. Detailed below.
-# authenticate_oidc - (Optional) Configuration block for an identity provider that is compliant with OpenID Connect (OIDC). Specify only when type is authenticate-oidc. Detailed below.
-# fixed_response - (Optional) Information for creating an action that returns a custom HTTP response. Required if type is fixed-response.
-# forward - (Optional) Configuration block for creating an action that distributes requests among one or more target groups. Specify only if type is forward. If you specify both forward block and target_group_arn attribute, you can specify only one target group using forward and it must be the same target group specified in target_group_arn. Detailed below.
-# order - (Optional) Order for the action. This value is required for rules with multiple actions. The action with the lowest value for order is performed first. Valid values are between 1 and 50000.
-# redirect - (Optional) Configuration block for creating a redirect action. Required if type is redirect. Detailed below.
-# target_group_arn - (Optional) ARN of the Target Group to which to route traffic. Specify only if type is forward and you want to route to a single target group. To route to one or more target groups, use a forward block instead.
-# authenticate_cognito
-# The following arguments are required:
+variable "rules" {
+  default = {}
+  type = list(object({
+    type = string
 
-# user_pool_arn - (Required) ARN of the Cognito user pool.
-# user_pool_client_id - (Required) ID of the Cognito user pool client.
-# user_pool_domain - (Required) Domain prefix or fully-qualified domain name of the Cognito user pool.
-# The following arguments are optional:
+    forward = optional(object({
+      target_group_arns   = optional(list(string))
+      stickiness_enabled  = optional(bool)
+      stickiness_duration = optional(number)
+    }))
 
-# authentication_request_extra_params - (Optional) Query parameters to include in the redirect request to the authorization endpoint. Max: 10. Detailed below.
-# on_unauthenticated_request - (Optional) Behavior if the user is not authenticated. Valid values are deny, allow and authenticate.
-# scope - (Optional) Set of user claims to be requested from the IdP.
-# session_cookie_name - (Optional) Name of the cookie used to maintain session information.
-# session_timeout - (Optional) Maximum duration of the authentication session, in seconds.
-# authentication_request_extra_params
-# key - (Required) Key of query parameter.
-# value - (Required) Value of query parameter.
-# authenticate_oidc
-# The following arguments are required:
+    redirect = optional(object({
+      host        = optional(string)
+      path        = optional(string)
+      port        = optional(string)
+      protocol    = optional(string)
+      query       = optional(string)
+      status_code = optional(string)
+    }))
 
-# authorization_endpoint - (Required) Authorization endpoint of the IdP.
-# client_id - (Required) OAuth 2.0 client identifier.
-# client_secret - (Required) OAuth 2.0 client secret.
-# issuer - (Required) OIDC issuer identifier of the IdP.
-# token_endpoint - (Required) Token endpoint of the IdP.
-# user_info_endpoint - (Required) User info endpoint of the IdP.
-# The following arguments are optional:
+    fixed = optional(object({
+      content_type = string
+      message_body = string
+      status_code  = number
+    }))
 
-# authentication_request_extra_params - (Optional) Query parameters to include in the redirect request to the authorization endpoint. Max: 10.
-# on_unauthenticated_request - (Optional) Behavior if the user is not authenticated. Valid values: deny, allow and authenticate
-# scope - (Optional) Set of user claims to be requested from the IdP.
-# session_cookie_name - (Optional) Name of the cookie used to maintain session information.
-# session_timeout - (Optional) Maximum duration of the authentication session, in seconds.
-# fixed_response
-# The following arguments are required:
+    # TODO - authenticate-cognito
+    # TODO - authenticate-oidc
 
-# content_type - (Required) Content type. Valid values are text/plain, text/css, text/html, application/javascript and application/json.
-# The following arguments are optional:
+    conditions = list(object({
+      http_headers  = optional(map(string))
+      query_strings = optional(map(string))
+      host_headers  = optional(list(string))
+      http_methods  = optional(list(string))
+      path_patterns = optional(list(string))
+      source_ips    = optional(list(string))
+    }))
+  }))
+}
 
-# message_body - (Optional) Message body.
-# status_code - (Optional) HTTP response code. Valid values are 2XX, 4XX, or 5XX.
-# forward
-# The following arguments are required:
 
-# target_group - (Required) Set of 1-5 target group blocks. Detailed below.
-# The following arguments are optional:
+resource "aws_lb_listener_rule" "this" {
+  for_each = module.context.enabled ? var.rules : {}
 
-# stickiness - (Optional) Configuration block for target group stickiness for the rule. Detailed below.
-# target_group
-# The following arguments are required:
+  listener_arn = aws_lb_listener.this[0].arn
+  tags         = module.context.tags
+  priority     = try(each.value.priority, null)
 
-# arn - (Required) ARN of the target group.
-# The following arguments are optional:
+  action {
+    type = each.value.type
 
-# weight - (Optional) Weight. The range is 0 to 999.
-# stickiness
-# The following arguments are required:
+    # dynamic "forward" {
+    #   for_each = each.value.forward != null ? [1] : []
+    # }
 
-# duration - (Required) Time period, in seconds, during which requests from a client should be routed to the same target group. The range is 1-604800 seconds (7 days).
-# The following arguments are optional:
+    # dynamic "redirect" {
+    # }
 
-# enabled - (Optional) Whether target group stickiness is enabled. Default is false.
-# redirect
-# NOTE::
-# You can reuse URI components using the following reserved keywords: #{protocol}, #{host}, #{port}, #{path} (the leading "/" is removed) and #{query}.
+    dynamic "fixed" {
+      for_each = each.value.forward != null ? [1] : []
+      content {
+        content_type = each.value.fixed.content_type
+        message_body = each.value.fixed.message_body
+        status_code  = each.value.fixed.status_code
+      }
+    }
+  }
 
-# The following arguments are required:
+  # dynamic "condition" {
+  #   for_each = each.value.conditions
 
-# status_code - (Required) HTTP redirect code. The redirect is either permanent (HTTP_301) or temporary (HTTP_302).
-# The following arguments are optional:
+  #   content {
 
-# host - (Optional) Hostname. This component is not percent-encoded. The hostname can contain #{host}. Defaults to #{host}.
-# path - (Optional) Absolute path, starting with the leading "/". This component is not percent-encoded. The path can contain #{host}, #{path}, and #{port}. Defaults to /#{path}.
-# port - (Optional) Port. Specify a value from 1 to 65535 or #{port}. Defaults to #{port}.
-# protocol - (Optional) Protocol. Valid values are HTTP, HTTPS, or #{protocol}. Defaults to #{protocol}.
-# query - (Optional) Query parameters, URL-encoded when necessary, but not percent-encoded. Do not include the leading "?". Defaults to #{query}.
-# Attributes Reference
-# In addition to all arguments above, the following attributes are exported:
+  #   }
+  # }
 
-# arn - ARN of the listener (matches id).
-# id - ARN of the listener (matches arn).
-# tags_all - A map of tags assigned to the resource, including those inherited from the provider default_tags configuration block.
+
+  # action {
+  #   type             = "forward"
+  #   target_group_arn = aws_lb_target_group.static.arn
+  # }
+
+  # condition {
+  #   path_pattern {
+  #     values = ["/static/*"]
+  #   }
+  # }
+
+  # condition {
+  #   host_header {
+  #     values = ["example.com"]
+  #   }
+  # }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Forward action
+
+resource "aws_lb_listener_rule" "host_based_weighted_routing" {
+  listener_arn = aws_lb_listener.front_end.arn
+  priority     = 99
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.static.arn
+  }
+
+  condition {
+    host_header {
+      values = ["my-service.*.terraform.io"]
+    }
+  }
+}
+
+# Weighted Forward action
+
+resource "aws_lb_listener_rule" "host_based_routing" {
+  listener_arn = aws_lb_listener.front_end.arn
+  priority     = 99
+
+  action {
+    type = "forward"
+    forward {
+      target_group {
+        arn    = aws_lb_target_group.main.arn
+        weight = 80
+      }
+
+      target_group {
+        arn    = aws_lb_target_group.canary.arn
+        weight = 20
+      }
+
+      stickiness {
+        enabled  = true
+        duration = 600
+      }
+    }
+  }
+
+  condition {
+    host_header {
+      values = ["my-service.*.terraform.io"]
+    }
+  }
+}
+
+# Redirect action
+
+resource "aws_lb_listener_rule" "redirect_http_to_https" {
+  listener_arn = aws_lb_listener.front_end.arn
+
+  action {
+    type = "redirect"
+
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
+  }
+
+  condition {
+    http_header {
+      http_header_name = "X-Forwarded-For"
+      values           = ["192.168.1.*"]
+    }
+  }
+}
+
+# Fixed-response action
+
+resource "aws_lb_listener_rule" "health_check" {
+  listener_arn = aws_lb_listener.front_end.arn
+
+  action {
+    type = "fixed-response"
+
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "HEALTHY"
+      status_code  = "200"
+    }
+  }
+
+  condition {
+    query_string {
+      key   = "health"
+      value = "check"
+    }
+
+    query_string {
+      value = "bar"
+    }
+  }
+}
+
+# Authenticate-cognito Action
+
+resource "aws_cognito_user_pool" "pool" {
+  # ...
+}
+
+resource "aws_cognito_user_pool_client" "client" {
+  # ...
+}
+
+resource "aws_cognito_user_pool_domain" "domain" {
+  # ...
+}
+
+resource "aws_lb_listener_rule" "admin" {
+  listener_arn = aws_lb_listener.front_end.arn
+
+  action {
+    type = "authenticate-cognito"
+
+    authenticate_cognito {
+      user_pool_arn       = aws_cognito_user_pool.pool.arn
+      user_pool_client_id = aws_cognito_user_pool_client.client.id
+      user_pool_domain    = aws_cognito_user_pool_domain.domain.domain
+    }
+  }
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.static.arn
+  }
+}
+
+# Authenticate-oidc Action
+
+resource "aws_lb_listener_rule" "oidc" {
+  listener_arn = aws_lb_listener.front_end.arn
+
+  action {
+    type = "authenticate-oidc"
+
+    authenticate_oidc {
+      authorization_endpoint = "https://example.com/authorization_endpoint"
+      client_id              = "client_id"
+      client_secret          = "client_secret"
+      issuer                 = "https://example.com"
+      token_endpoint         = "https://example.com/token_endpoint"
+      user_info_endpoint     = "https://example.com/user_info_endpoint"
+    }
+  }
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.static.arn
+  }
+}
