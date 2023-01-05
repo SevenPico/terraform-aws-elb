@@ -24,8 +24,8 @@ module "lb" {
 
   listeners = {
     test-http = {
-      port        = 80
-      protocol    = "HTTP"
+      port     = 80
+      protocol = "HTTP"
 
       rules_count = 3
       rules = [
@@ -56,7 +56,7 @@ module "lb" {
         },
         {
           type             = "forward"
-          target_group_arn = module.lambda_target_group.arn
+          target_group_arn = aws_lb_target_group.this[0].arn
           # forward = {
           #   target_group_arns   = optional(list(string))
           #   stickiness_enabled  = optional(bool)
@@ -81,22 +81,27 @@ module "lb" {
 # ------------------------------------------------------------------------------
 # Lambda Target
 # ------------------------------------------------------------------------------
-module "lambda_target_group" {
-  source     = "../modules/target-group"
-  context    = module.context.self
-  attributes = ["tg"]
-
-  target_ids  = [aws_lambda_function.target.arn]
-  target_type = "lambda"
-  vpc_id      = module.vpc.vpc_id
-}
-
 resource "aws_lambda_permission" "target" {
   statement_id  = "AllowExecutionFromlb"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.target.function_name
   principal     = "elasticloadbalancing.amazonaws.com"
-  source_arn    = module.lambda_target_group.arn
+  source_arn    = aws_lb_target_group.this[0].arn
+}
+
+resource "aws_lb_target_group" "this" {
+  count       = module.context.enabled ? 1 : 0
+  name        = module.context.id
+  tags        = module.context.tags
+  vpc_id      = module.vpc.vpc_id
+  target_type = "lambda"
+}
+
+
+resource "aws_lb_target_group_attachment" "this" {
+  target_group_arn = aws_lb_target_group.this[0].arn
+  target_id        = aws_lambda_function.target.arn
+  depends_on       = [aws_lambda_permission.target]
 }
 
 

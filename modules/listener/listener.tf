@@ -112,13 +112,6 @@ resource "aws_lb_listener_rule" "this" {
     type             = var.rules[count.index].type
     target_group_arn = var.rules[count.index].target_group_arn
 
-    # TODO
-    # dynamic "forward" {
-    #   for_each = var.rules[count.index].forward != null ? [1] : []
-    #   content {
-    #   }
-    # }
-
     dynamic "redirect" {
       for_each = var.rules[count.index].redirect != null ? [1] : []
       content {
@@ -130,7 +123,6 @@ resource "aws_lb_listener_rule" "this" {
         status_code = var.rules[count.index].redirect.is_permanent ? "HTTP_301" : "HTTP_302"
       }
     }
-
 
     dynamic "fixed_response" {
       for_each = var.rules[count.index].fixed_response != null ? [1] : []
@@ -144,7 +136,6 @@ resource "aws_lb_listener_rule" "this" {
 
   dynamic "condition" {
     for_each = var.rules[count.index].conditions
-
     content {
       dynamic "path_pattern" {
         for_each = condition.value.path_patterns != null ? [1] : []
