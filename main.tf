@@ -188,6 +188,7 @@ variable "listeners" {
     additional_certificate_arns = optional(list(string))
     ssl_policy                  = optional(string)
     alpn_policy                 = optional(string)
+    rules                       = any #optional(list(any))
 
     # targets = list(object({
     #   vpc_id = string
@@ -209,13 +210,5 @@ module "listeners" {
   ssl_policy      = try(each.value.ssl_policy, "ELBSecurityPolicy-TLS-1-2-Ext-2018-06")
   alpn_policy     = try(each.value.alpn_policy, "HTTP2Preferred")
   certificate_arn = try(each.value.certificate_arn, null)
-
-  # default_action {
-  #   type = "fixed-response"
-  #   fixed_response {
-  #     content_type = "text/plain"
-  #     message_body = "Unimplemented"
-  #     status_code  = 200
-  #   }
-  # }
+  rules           = try(each.value.rules, [])
 }

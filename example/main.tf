@@ -31,9 +31,45 @@ module "lb" {
     test-http = {
       port     = 80
       protocol = "HTTP"
-
-      actions = {
-      }
+      rules = [
+        {
+          type = "fixed-response"
+          fixed_response = {
+            content_type = "text/plain"
+            message_body = "This is your fixed response message body."
+            status_code  = 200
+          }
+          conditions = [{
+            path_patterns = ["/fixed"]
+          }]
+        },
+        {
+          type = "redirect"
+          redirect = {
+            host         = "wttr.in"
+            path         = "/moon"
+            port         = 80
+            protocol     = "HTTP"
+            query        = ""
+            is_permanent = true
+          }
+          conditions = [{
+            path_patterns = ["/weather"]
+          }]
+        },
+        # {
+        #   type             = "forward"
+        #   target_group_arn = "FIXME"
+        #   # forward = {
+        #   #   target_group_arns   = optional(list(string))
+        #   #   stickiness_enabled  = optional(bool)
+        #   #   stickiness_duration = optional(number)
+        #   # }
+        #   conditions = [{
+        #     path_patterns = ["/forward"]
+        #   }]
+        # },
+      ]
     }
 
     # test-https = {
@@ -42,49 +78,7 @@ module "lb" {
     #   certificate_arn = "" # TODO
     # }
   }
-
-  #   api = {
-  #     port            = 80     //443
-  #     protocol        = "HTTP" #"HTTPS"
-  #     certificate_arn = ""     # TODO
-
-  #     # actions = {
-  #     #   default = {
-  #     #     # type                 - (Required) Type of routing action. Valid values are forward, redirect, fixed-response, authenticate-cognito and authenticate-oidc.
-  #     #     # target_group_arn     - (Optional) ARN of the Target Group to which to route traffic. Specify only if type is forward and you want to route to a single target group. To route to one or more target groups, use a forward block instead.
-
-  #     #     # forward              - (Optional) Configuration block for creating an action that distributes requests among one or more target groups. Specify only if type is forward. If you specify both forward block and target_group_arn attribute, you can specify only one target group using forward and it must be the same target group specified in target_group_arn. Detailed below.
-  #     #     # redirect             - (Optional) Configuration block for creating a redirect action. Required if type is redirect. Detailed below.
-  #     #     # fixed_response       - (Optional) Information for creating an action that returns a custom HTTP response. Required if type is fixed-response.
-  #     #     # authenticate_cognito - (Optional) Configuration block for using Amazon Cognito to authenticate users. Specify only when type is authenticate-cognito. Detailed below.
-  #     #     # authenticate_oidc    - (Optional) Configuration block for an identity provider that is compliant with OpenID Connect (OIDC). Specify only when type is authenticate-oidc. Detailed below.
-
-  #     #     priority = 1
-  #     #     conditions = {
-  #     #       payter-path = {
-  #     #         path_pattern = "/payter/*"
-  #     #       }
-  #     #     }
-
-  #     #   }
-  #     #   payment = {
-  #     #     forward = {
-  #     #       target_groups = {
-  #     #         payment-service = {
-  #     #           arn    = ""
-  #     #           weight = 0
-  #     #         }
-  #     #       }
-  #     #       stickiness_enabled  = false
-  #     #       stickiness_duration = 60 # seconds
-  #     #     }
-  #     #   }
-  #     # }
-  #   }
-  # }
-
 }
-
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
