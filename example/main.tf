@@ -24,8 +24,10 @@ module "lb" {
 
   listeners = {
     test-http = {
-      port     = 80
-      protocol = "HTTP"
+      port        = 80
+      protocol    = "HTTP"
+
+      rules_count = 3
       rules = [
         {
           type = "fixed-response"

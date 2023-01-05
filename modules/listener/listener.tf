@@ -50,6 +50,10 @@ resource "aws_lb_listener" "this" {
   }
 }
 
+variable "rules_count" {
+  type    = number
+  default = 0
+}
 
 # rule = action + condition
 variable "rules" {
@@ -96,48 +100,50 @@ variable "rules" {
 }
 
 resource "aws_lb_listener_rule" "this" {
-  for_each = module.context.enabled ? { for index, rule in var.rules : index => rule } : {}
+  #for_each = module.context.enabled ? { for index, rule in var.rules : index => rule } : {}
+  count = module.context.enabled ? var.rules_count : 0 # length(var.rules) : 0
+
 
   listener_arn = aws_lb_listener.this[0].arn
   tags         = module.context.tags
-  priority     = try(each.value.priority, null)
+  priority     = try(var.rules[count.index].priority, null)
 
   action {
-    type             = each.value.type
-    target_group_arn = each.value.target_group_arn
+    type             = var.rules[count.index].type
+    target_group_arn = var.rules[count.index].target_group_arn
 
     # TODO
     # dynamic "forward" {
-    #   for_each = each.value.forward != null ? [1] : []
+    #   for_each = var.rules[count.index].forward != null ? [1] : []
     #   content {
     #   }
     # }
 
     dynamic "redirect" {
-      for_each = each.value.redirect != null ? [1] : []
+      for_each = var.rules[count.index].redirect != null ? [1] : []
       content {
-        host        = each.value.redirect.host
-        path        = each.value.redirect.path
-        port        = each.value.redirect.port
-        protocol    = each.value.redirect.protocol
-        query       = each.value.redirect.query
-        status_code = each.value.redirect.is_permanent ? "HTTP_301" : "HTTP_302"
+        host        = var.rules[count.index].redirect.host
+        path        = var.rules[count.index].redirect.path
+        port        = var.rules[count.index].redirect.port
+        protocol    = var.rules[count.index].redirect.protocol
+        query       = var.rules[count.index].redirect.query
+        status_code = var.rules[count.index].redirect.is_permanent ? "HTTP_301" : "HTTP_302"
       }
     }
 
 
     dynamic "fixed_response" {
-      for_each = each.value.fixed_response != null ? [1] : []
+      for_each = var.rules[count.index].fixed_response != null ? [1] : []
       content {
-        content_type = each.value.fixed_response.content_type
-        message_body = each.value.fixed_response.message_body
-        status_code  = each.value.fixed_response.status_code
+        content_type = var.rules[count.index].fixed_response.content_type
+        message_body = var.rules[count.index].fixed_response.message_body
+        status_code  = var.rules[count.index].fixed_response.status_code
       }
     }
   }
 
   dynamic "condition" {
-    for_each = each.value.conditions
+    for_each = var.rules[count.index].conditions
 
     content {
       dynamic "path_pattern" {

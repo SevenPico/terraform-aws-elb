@@ -189,6 +189,7 @@ variable "listeners" {
     ssl_policy                  = optional(string)
     alpn_policy                 = optional(string)
     rules                       = any #optional(list(any))
+    rules_count                 = number
 
     # targets = list(object({
     #   vpc_id = string
@@ -211,4 +212,5 @@ module "listeners" {
   alpn_policy     = try(each.value.alpn_policy, "HTTP2Preferred")
   certificate_arn = try(each.value.certificate_arn, null)
   rules           = try(each.value.rules, [])
+  rules_count     = try(each.value.rules_count, [])
 }
