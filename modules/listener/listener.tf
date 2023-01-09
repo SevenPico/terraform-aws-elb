@@ -1,3 +1,7 @@
+terraform {
+  experiments = [module_variable_optional_attrs]
+}
+
 variable "load_balancer_arn" {
   type = string
 }
@@ -37,7 +41,7 @@ resource "aws_lb_listener" "this" {
   port            = var.port
   protocol        = var.protocol
   ssl_policy      = var.ssl_policy
-  alpn_policy     = var.alpn_policy
+  #alpn_policy     = var.alpn_policy
   certificate_arn = var.certificate_arn
 
   default_action {

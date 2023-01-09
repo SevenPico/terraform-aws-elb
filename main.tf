@@ -1,3 +1,6 @@
+terraform {
+  experiments = [module_variable_optional_attrs]
+}
 
 variable "type" {
   type    = string
@@ -116,9 +119,26 @@ variable "targets" {
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
-output "all" {
-  value = aws_lb.this
+output "arn" {
+  value = try(aws_lb.this[0].arn, "")
 }
+
+output "arn_suffix" {
+  value = try(aws_lb.this[0].arn_suffix, "")
+}
+
+output "dns_name" {
+  value = try(aws_lb.this[0].dns_name, "")
+}
+
+output "id" {
+  value = try(aws_lb.this[0].id, "")
+}
+
+output "zone_id" {
+  value = try(aws_lb.this[0].zone_id, "")
+}
+
 
 
 # ------------------------------------------------------------------------------
@@ -181,21 +201,22 @@ resource "aws_lb" "this" {
 
 variable "listeners" {
   default = {}
-  type = map(object({
-    port                        = number
-    protocol                    = string
-    certificate_arn             = optional(string)
-    additional_certificate_arns = optional(list(string))
-    ssl_policy                  = optional(string)
-    alpn_policy                 = optional(string)
-    rules                       = any #optional(list(any))
-    rules_count                 = number
+  type    = any
+  # map(object({
+  #   port                        = number
+  #   protocol                    = string
+  #   certificate_arn             = optional(string)
+  #   additional_certificate_arns = optional(list(string))
+  #   ssl_policy                  = optional(string)
+  #   alpn_policy                 = optional(string)
+  #   rules                       = any #optional(list(any))
+  #   rules_count                 = number
 
-    # targets = list(object({
-    #   vpc_id = string
-    #   # ...
-    # }))
-  }))
+  #   # targets = list(object({
+  #   #   vpc_id = string
+  #   #   # ...
+  #   # }))
+  # }))
 }
 
 module "listeners" {
@@ -206,10 +227,10 @@ module "listeners" {
 
   load_balancer_arn = aws_lb.this[0].arn
 
-  port            = try(each.value.port, "443")
-  protocol        = try(each.value.protocol, "HTTPS")
-  ssl_policy      = try(each.value.ssl_policy, "ELBSecurityPolicy-TLS-1-2-Ext-2018-06")
-  alpn_policy     = try(each.value.alpn_policy, "HTTP2Preferred")
+  port       = try(each.value.port, "443")
+  protocol   = try(each.value.protocol, "HTTPS")
+  ssl_policy = try(each.value.ssl_policy, "ELBSecurityPolicy-TLS-1-2-Ext-2018-06")
+  #FIXME alpn_policy     = try(each.value.alpn_policy, "HTTP2Preferred")
   certificate_arn = try(each.value.certificate_arn, null)
   rules           = try(each.value.rules, [])
   rules_count     = try(each.value.rules_count, [])
