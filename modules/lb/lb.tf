@@ -1,9 +1,9 @@
 
 resource "aws_lb" "this" {
-  count = module.context.enabled ? 1 : 0
+  count = data.context.this.enabled ? 1 : 0
 
-  name        = module.context.id
-  tags        = module.context.tags
+  name        = data.context.this.name
+  tags        = data.context.this.tags
   name_prefix = null # dont use
 
   internal                         = var.internal
@@ -28,7 +28,7 @@ resource "aws_lb" "this" {
   }
 
   dynamic "subnet_mapping" {
-    for_each = toset(module.context.enabled ? var.subnet_mappings : [])
+    for_each = toset(data.context.this.enabled ? var.subnet_mappings : [])
 
     content {
       subnet_id            = subnet_mapping.subnet_id

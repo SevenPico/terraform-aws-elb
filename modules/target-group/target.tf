@@ -1,37 +1,8 @@
-variable "vpc_id" {
-  type = string
-}
-
-variable "target_type" {
-  type = string
-}
-
-variable "target_ids" {
-  type = list(string)
-}
-
-output "arn_suffix" {
-  value = try(aws_lb_target_group.this[0].arn_suffix, "")
-}
-
-output "arn" {
-  value = try(aws_lb_target_group.this[0].arn, "")
-}
-
-output "id" {
-  value = try(aws_lb_target_group.this[0].id, "")
-}
-
-output "name" {
-  value = try(aws_lb_target_group.this[0].name, "")
-}
-
-
 resource "aws_lb_target_group" "this" {
-  count = module.context.enabled ? 1 : 0
+  count = data.context.this.enabled ? 1 : 0
 
-  name        = module.context.id
-  tags        = module.context.tags
+  name        = data.context.this.name
+  tags        = data.context.this.tags
   name_prefix = null # don't use
 
   vpc_id      = var.vpc_id

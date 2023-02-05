@@ -1,157 +1,17 @@
-variable "type" {
-  type    = string
-  default = "application"
-
-  validation {
-    condition     = contains(["application"], var.type)
-    error_message = "The 'type' must be one of [application]."
-  }
-}
-
-variable "security_group_ids" {
-  type = list(string)
-}
-
-variable "subnet_ids" {
-  type = list(string)
-}
-
-variable "internal" {
-  type    = bool
-  default = false
-}
-
-variable "drop_invalid_header_fields" {
-  type    = bool
-  default = false
-}
-
-variable "preserve_host_header" {
-  type    = bool
-  default = false
-}
-
-variable "access_logs_enabled" {
-  type    = string
-  default = false
-}
-
-variable "access_log_bucket_id" {
-  type    = string
-  default = ""
-}
-
-variable "idle_timeout_seconds" {
-  type    = number
-  default = 60
-}
-
-variable "enable_deletion_protection" {
-  type    = bool
-  default = false
-}
-
-variable "enable_cross_zone_load_balancing" {
-  type    = bool
-  default = false
-}
-
-variable "enable_http2" {
-  type    = bool
-  default = true
-}
-
-variable "enable_waf_fail_open" {
-  type    = bool
-  default = false
-}
-
-variable "customer_owned_ipv4_pool" {
-  type    = string
-  default = ""
-}
-
-variable "ip_address_type" {
-  type    = string
-  default = "ipv4"
-}
-
-variable "desync_mitigation_mode" {
-  type    = string
-  default = "defensive"
-}
-
-/*
-variable "target_groups" {
-  type = map(object({
-    port            = number
-    protocol        = string
-    ssl_policy      = string
-    certificate_arn = string
-    # ...
-
-    targets = list(object({
-      vpc_id = string
-      # ...
-    }))
-  }))
-}
-
-variable "targets" {
-  type = map(object({
-    port            = number
-    protocol        = string
-    ssl_policy      = string
-    certificate_arn = string
-    # ...
-
-    targets = list(object({
-      vpc_id = string
-      # ...
-    }))
-  }))
-}
-*/
-
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
-output "arn" {
-  value = try(aws_lb.this[0].arn, "")
-}
-
-output "arn_suffix" {
-  value = try(aws_lb.this[0].arn_suffix, "")
-}
-
-output "dns_name" {
-  value = try(aws_lb.this[0].dns_name, "")
-}
-
-output "id" {
-  value = try(aws_lb.this[0].id, "")
-}
-
-output "zone_id" {
-  value = try(aws_lb.this[0].zone_id, "")
-}
-
-
-
-# ------------------------------------------------------------------------------
-# ------------------------------------------------------------------------------
-
 locals {
   default_logs_prefix = join("/", compact([
     try(data.aws_caller_identity.current[0].account_id, ""),
-    "${module.context.id}/"
+    "${data.context.this.name}/"
   ]))
 }
 
 resource "aws_lb" "this" {
-  count = module.context.enabled ? 1 : 0
+  count = data.context.this.enabled ? 1 : 0
 
-  name        = module.context.id
-  tags        = module.context.tags
+  name        = data.context.this.name
+  tags        = data.context.this.tags
   name_prefix = null # dont use
 
   internal                         = var.internal
@@ -179,7 +39,7 @@ resource "aws_lb" "this" {
   }
 
   # dynamic "subnet_mapping" {
-  #   for_each = toset(module.context.enabled ? var.subnet_mappings : [])
+  #   for_each = toset(data.context.this.enabled ? var.subnet_mappings : [])
 
   #   content {
   #     subnet_id            = subnet_mapping.subnet_id
@@ -194,32 +54,11 @@ resource "aws_lb" "this" {
 # ------------------------------------------------------------------------------
 # Listeners
 # ------------------------------------------------------------------------------
-
-variable "listeners" {
-  default = {}
-  type    = any
-  # map(object({
-  #   port                        = number
-  #   protocol                    = string
-  #   certificate_arn             = optional(string)
-  #   additional_certificate_arns = optional(list(string))
-  #   ssl_policy                  = optional(string)
-  #   alpn_policy                 = optional(string)
-  #   rules                       = any #optional(list(any))
-  #   rules_count                 = number
-
-  #   # targets = list(object({
-  #   #   vpc_id = string
-  #   #   # ...
-  #   # }))
-  # }))
-}
-
 module "listeners" {
   source  = "./modules/listener"
-  context = module.context.self
+  context = data.context.this
 
-  for_each = module.context.enabled ? var.listeners : {}
+  for_each = data.context.this.enabled ? var.listeners : {}
 
   load_balancer_arn = aws_lb.this[0].arn
 
