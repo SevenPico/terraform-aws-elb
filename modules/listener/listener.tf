@@ -1,12 +1,14 @@
+
+
 resource "aws_lb_listener" "this" {
-  count = data.context.this.enabled ? 1 : 0
+  count = module.context.enabled ? 1 : 0
 
   load_balancer_arn = var.load_balancer_arn
-  tags              = data.context.this.tags
+  tags              = module.context.tags
 
-  port       = var.port
-  protocol   = var.protocol
-  ssl_policy = contains(["HTTPS", "TLS"], var.protocol) ? var.ssl_policy : null
+  port            = var.port
+  protocol        = var.protocol
+  ssl_policy      = var.ssl_policy
   #alpn_policy     = var.alpn_policy
   certificate_arn = var.certificate_arn
 
@@ -70,11 +72,12 @@ variable "rules" {
 }
 
 resource "aws_lb_listener_rule" "this" {
-  count = data.context.this.enabled ? var.rules_count : 0 # length(var.rules) : 0
+  #for_each = module.context.enabled ? { for index, rule in var.rules : index => rule } : {}
+  count = module.context.enabled ? var.rules_count : 0 # length(var.rules) : 0
 
 
   listener_arn = aws_lb_listener.this[0].arn
-  tags         = data.context.this.tags
+  tags         = module.context.tags
   priority     = try(var.rules[count.index].priority, null)
 
   action {

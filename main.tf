@@ -1,17 +1,19 @@
+
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
+
 locals {
   default_logs_prefix = join("/", compact([
     try(data.aws_caller_identity.current[0].account_id, ""),
-    "${data.context.this.name}/"
+    "${module.context.id}/"
   ]))
 }
 
 resource "aws_lb" "this" {
-  count = data.context.this.enabled ? 1 : 0
+  count = module.context.enabled ? 1 : 0
 
-  name        = data.context.this.name
-  tags        = data.context.this.tags
+  name        = module.context.id
+  tags        = module.context.tags
   name_prefix = null # dont use
 
   internal                         = var.internal
@@ -39,7 +41,7 @@ resource "aws_lb" "this" {
   }
 
   # dynamic "subnet_mapping" {
-  #   for_each = toset(data.context.this.enabled ? var.subnet_mappings : [])
+  #   for_each = toset(module.context.enabled ? var.subnet_mappings : [])
 
   #   content {
   #     subnet_id            = subnet_mapping.subnet_id
@@ -54,11 +56,13 @@ resource "aws_lb" "this" {
 # ------------------------------------------------------------------------------
 # Listeners
 # ------------------------------------------------------------------------------
+
+
 module "listeners" {
   source  = "./modules/listener"
-  context = data.context.this
+  context = module.context.self
 
-  for_each = data.context.this.enabled ? var.listeners : {}
+  for_each = module.context.enabled ? var.listeners : {}
 
   load_balancer_arn = aws_lb.this[0].arn
 
