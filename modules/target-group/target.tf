@@ -1,8 +1,10 @@
-resource "aws_lb_target_group" "this" {
-  count = data.context.this.enabled ? 1 : 0
 
-  name        = data.context.this.name
-  tags        = data.context.this.tags
+
+resource "aws_lb_target_group" "this" {
+  count = module.context.enabled ? 1 : 0
+
+  name        = module.context.id
+  tags        = module.context.tags
   name_prefix = null # don't use
 
   vpc_id      = var.vpc_id
