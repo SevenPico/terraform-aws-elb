@@ -35,7 +35,7 @@ resource "aws_lb" "this" {
     for_each = toset(var.access_logs_enabled ? [1] : [])
     content {
       enabled = var.access_logs_enabled
-      bucket  = var.access_logs_bucket_id
+      bucket  = var.access_log_bucket_id
       prefix  = local.default_logs_prefix
     }
   }
