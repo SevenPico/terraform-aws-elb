@@ -5,7 +5,7 @@
 locals {
   default_logs_prefix = join("/", compact([
     try(data.aws_caller_identity.current[0].account_id, ""),
-    "${module.context.id}/"
+    module.context.id
   ]))
 }
 
