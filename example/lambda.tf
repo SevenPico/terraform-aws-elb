@@ -13,7 +13,7 @@ resource "aws_lambda_function" "target" {
 
 
   environment {
-    variables = {foo = "bar"}
+    variables = { foo = "bar" }
   }
 }
 

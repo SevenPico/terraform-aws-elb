@@ -6,9 +6,9 @@ resource "aws_lb_listener" "this" {
   load_balancer_arn = var.load_balancer_arn
   tags              = module.context.tags
 
-  port            = var.port
-  protocol        = var.protocol
-  ssl_policy      = var.ssl_policy
+  port       = var.port
+  protocol   = var.protocol
+  ssl_policy = var.ssl_policy
   #alpn_policy     = var.alpn_policy
   certificate_arn = var.certificate_arn
 
