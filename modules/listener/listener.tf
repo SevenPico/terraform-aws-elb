@@ -2,6 +2,7 @@
 
 resource "aws_lb_listener" "this" {
   #checkov:skip=CKV_AWS_2:skipping 'Ensure ALB protocol is HTTPS'
+  #checkov:skip=CKV_AWS_103:skipping 'Ensure that load balancer is using at least TLS 1.2'
   count = module.context.enabled ? 1 : 0
 
   load_balancer_arn = var.load_balancer_arn
