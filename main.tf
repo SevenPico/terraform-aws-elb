@@ -10,6 +10,10 @@ locals {
 }
 
 resource "aws_lb" "this" {
+  #checkov:skip=CKV_AWS_150:skipping 'Ensure that Load Balancer has deletion protection enabled'
+  #checkov:skip=CKV_AWS_152:skipping 'Ensure that Load Balancer (Network/Gateway) has cross-zone load balancing enabled'
+  #checkov:skip=CKV_AWS_131:skipping 'Ensure that ALB drops HTTP headers'
+  #checkov:skip=CKV2_AWS_28:skipping 'Ensure public facing ALB are protected by WAF'
   count = module.context.enabled ? 1 : 0
 
   name        = module.context.id

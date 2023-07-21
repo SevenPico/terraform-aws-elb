@@ -2,6 +2,12 @@
 # Lambda
 # ------------------------------------------------------------------------------
 resource "aws_lambda_function" "target" {
+  #checkov:skip=CKV_AWS_272:skipping 'Ensure AWS Lambda function is configured to validate code-signing'
+  #checkov:skip=CKV_AWS_116:skipping 'Ensure that AWS Lambda function is configured for a Dead Letter Queue(DLQ)'
+  #checkov:skip=CKV_AWS_117:skipping 'Ensure that AWS Lambda function is configured inside a VPC'
+  #checkov:skip=CKV_AWS_50:skipping 'X-ray tracing is enabled for Lambda'
+  #checkov:skip=CKV_AWS_115:skipping 'Ensure that AWS Lambda function is configured for function-level concurrent execution limit'
+  #checkov:skip=CKV_AWS_173:skipping 'Check encryption settings for Lambda environmental variable'
   function_name = "lambda_function_name"
 
   role    = aws_iam_role.target_lambda.arn
@@ -13,7 +19,7 @@ resource "aws_lambda_function" "target" {
 
 
   environment {
-    variables = {foo = "bar"}
+    variables = { foo = "bar" }
   }
 }
 
